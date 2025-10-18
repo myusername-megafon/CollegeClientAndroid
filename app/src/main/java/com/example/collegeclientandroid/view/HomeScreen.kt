@@ -123,8 +123,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
             )
             
             Spacer(modifier = Modifier.size(16.dp))
-            
-            // Кнопка поиска расписания
+
             Button(
                 onClick = {
                     if (uiState.groupName.isNotBlank() && uiState.selectedDateMillis != null) {
@@ -134,7 +133,13 @@ fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading
+                enabled = !uiState.isLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Black,
+                    contentColor = Color.White,
+                    disabledContentColor = Color.Black,
+                    disabledContainerColor = Color.DarkGray
+                )
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
@@ -143,7 +148,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                 }
-                Text("Найти расписание")
+                Text("Найти расписание",color = Color.White)
             }
             
             Spacer(modifier = Modifier.size(16.dp))
