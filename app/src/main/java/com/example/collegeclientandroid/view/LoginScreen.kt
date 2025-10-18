@@ -31,6 +31,7 @@ import com.example.collegeclientandroid.viewmodel.LoginScreenViewModel
 @Composable
 fun LoginScreen(
     onRegisterClick: () -> Unit,
+    onLoginClick: () -> Unit,
     viewModel: LoginScreenViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.screenState.collectAsState()
@@ -90,7 +91,7 @@ fun LoginScreen(
                         modifier = Modifier
                             .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
                             .fillMaxWidth(),
-                        onClick = { viewModel.login() },
+                        onClick = { onLoginClick()/*viewModel.login()*/ },
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Black,

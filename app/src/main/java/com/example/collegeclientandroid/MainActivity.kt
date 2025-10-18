@@ -19,6 +19,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.collegeclientandroid.view.HomeScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -35,13 +36,17 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable("login") {
                             LoginScreen(
-                                onRegisterClick = { navController.navigate("registration") }
+                                onRegisterClick = { navController.navigate("registration") },
+                                onLoginClick = {navController.navigate("home")}
                             )
                         }
                         composable("registration") {
                             RegistrationScreen(
                                 onLoginClick = { navController.popBackStack(); navController.navigate("login") }
                             )
+                        }
+                        composable("home") {
+                            HomeScreen()
                         }
                     }
                 }
