@@ -1,8 +1,6 @@
-package com.example.collegeclientandroid
+package com.example.collegeclientandroid.viewmodel
 
-data class RegistrationScreenState(
-    val fullName: String = "",
-    val group: String = "",
+data class LoginScreenState(
     val email: String = "",
     val password: String = "",
     val isLoading: Boolean = false,

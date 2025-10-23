@@ -1,6 +1,5 @@
-package com.example.collegeclientandroid
+package com.example.collegeclientandroid.viewmodel
 
-import java.time.LocalDate
 
 data class HomeScreenState(
     val groupName: String = "",

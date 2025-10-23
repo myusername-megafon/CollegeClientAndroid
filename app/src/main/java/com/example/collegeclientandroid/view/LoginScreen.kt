@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,10 +32,17 @@ import com.example.collegeclientandroid.viewmodel.LoginScreenViewModel
 @Composable
 fun LoginScreen(
     onRegisterClick: () -> Unit,
-    onLoginClick: () -> Unit,
+    onLoginSuccess: () -> Unit,
     viewModel: LoginScreenViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.screenState.collectAsState()
+
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            onLoginSuccess()
+        }
+    }
+    
     CollegeClientAndroidTheme {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -87,11 +95,20 @@ fun LoginScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    uiState.errorMessage?.let { errorMessage ->
+                        Text(
+                            text = errorMessage,
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                        )
+                    }
+
                     Button(
                         modifier = Modifier
                             .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
                             .fillMaxWidth(),
-                        onClick = { onLoginClick()/*viewModel.login()*/ },
+                        onClick = { viewModel.login() },
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Black,
@@ -101,7 +118,7 @@ fun LoginScreen(
                         enabled = !uiState.isLoading
                     )
                     {
-                        Text(text = "Войти", color = Color.White)
+                        Text(text = if (uiState.isLoading) "Вход..." else "Войти", color = Color.White)
                     }
 
                     Text(
@@ -113,12 +130,6 @@ fun LoginScreen(
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    // Превью без DI
 }
 
 

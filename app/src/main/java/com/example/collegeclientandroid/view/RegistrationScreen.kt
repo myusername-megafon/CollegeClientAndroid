@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,9 +32,17 @@ import com.example.collegeclientandroid.viewmodel.RegistrationScreenViewModel
 @Composable
 fun RegistrationScreen(
     onLoginClick: () -> Unit,
+    onRegistrationSuccess: () -> Unit,
     viewModel: RegistrationScreenViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.screenState.collectAsState()
+
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            onRegistrationSuccess()
+        }
+    }
+    
     CollegeClientAndroidTheme {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -111,6 +120,15 @@ fun RegistrationScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    uiState.errorMessage?.let { errorMessage ->
+                        Text(
+                            text = errorMessage,
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                        )
+                    }
+
                     Button(
                         modifier = Modifier
                             .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
@@ -125,7 +143,7 @@ fun RegistrationScreen(
                         enabled = !uiState.isLoading
                     )
                     {
-                        Text(text = "Регистрация",color = Color.White)
+                        Text(text = if (uiState.isLoading) "Регистрация..." else "Регистрация", color = Color.White)
                     }
 
                     Text(
@@ -137,11 +155,4 @@ fun RegistrationScreen(
             }
         }
     }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun RegistrationScreenPreview() {
-    
 }

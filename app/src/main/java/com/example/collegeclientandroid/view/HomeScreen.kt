@@ -53,15 +53,20 @@ import com.example.collegeclientandroid.viewmodel.LoginScreenViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
+fun HomeScreen(
+    viewModel: HomeScreenViewModel = hiltViewModel(),
+    onProfileClick: () -> Unit
+) {
 
     val uiState by viewModel.screenState.collectAsState()
     val datePickerState = rememberDatePickerState()
 
     CollegeClientAndroidTheme {
-        Column(modifier = Modifier
-            .padding(8.dp)
-            .fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxSize()
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -72,7 +77,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp)
                 )
                 Button(
-                    onClick = { viewModel.onProfileClicked() },
+                    onClick = { onProfileClick() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Black,
                         contentColor = Color.White,
@@ -100,7 +105,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
                 label = { Text("Введите номер группы") },
                 isError = uiState.errorMessage != null
             )
-            
+
             Spacer(modifier = Modifier.size(16.dp))
 
             Text(
@@ -109,7 +114,9 @@ fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().clickable { viewModel.onDatePickerClicked() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.onDatePickerClicked() },
                 value = uiState.selectedDate,
                 onValueChange = {},
                 readOnly = true,
@@ -121,7 +128,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
                 },
                 isError = uiState.errorMessage != null
             )
-            
+
             Spacer(modifier = Modifier.size(16.dp))
 
             Button(
@@ -148,9 +155,9 @@ fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                 }
-                Text("Найти расписание",color = Color.White)
+                Text("Найти расписание", color = Color.White)
             }
-            
+
             Spacer(modifier = Modifier.size(16.dp))
 
             if (uiState.schedule.isNotEmpty()) {
@@ -159,7 +166,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = hiltViewModel()) {
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                
+
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -217,9 +224,4 @@ fun LessonCard(lesson: String) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    HomeScreen()
-}
 

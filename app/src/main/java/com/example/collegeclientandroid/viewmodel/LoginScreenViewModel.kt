@@ -2,7 +2,7 @@ package com.example.collegeclientandroid.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.collegeclientandroid.LoginScreenState
+import com.example.collegeclientandroid.AuthManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class LoginScreenViewModel @Inject constructor(
-    // добавить зависимости позже
+    val authManager: AuthManager
 ) : ViewModel() {
 
     private val _screenState: MutableStateFlow<LoginScreenState> = MutableStateFlow(LoginScreenState())
@@ -33,16 +33,30 @@ class LoginScreenViewModel @Inject constructor(
             return
         }
 
+        if (!isValidEmail(state.email)) {
+            _screenState.value = state.copy(errorMessage = "Введите корректный email")
+            return
+        }
+
         viewModelScope.launch {
             _screenState.value = _screenState.value.copy(isLoading = true, errorMessage = null)
             try {
-                _screenState.value = _screenState.value.copy(isSuccess = true)
+                val success = authManager.logIn(state.email, state.password)
+                if (success) {
+                    _screenState.value = _screenState.value.copy(isSuccess = true)
+                } else {
+                    _screenState.value = _screenState.value.copy(errorMessage = "Неверный email или пароль")
+                }
             } catch (t: Throwable) {
                 _screenState.value = _screenState.value.copy(errorMessage = t.message ?: "Ошибка входа")
             } finally {
                 _screenState.value = _screenState.value.copy(isLoading = false)
             }
         }
+    }
+
+    private fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 }
 

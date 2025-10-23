@@ -2,8 +2,7 @@ package com.example.collegeclientandroid.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.collegeclientandroid.ApiService
-import com.example.collegeclientandroid.HomeScreenState
+import com.example.collegeclientandroid.network.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,10 +65,6 @@ class HomeScreenViewModel @Inject constructor(
         )
     }
 
-    fun onProfileClicked() {
-        // Навигация в профиль
-    }
-
 
     fun setError(message: String) {
         _screenState.value = _screenState.value.copy(errorMessage = message)
@@ -101,9 +96,5 @@ class HomeScreenViewModel @Inject constructor(
                 )
             }
         }
-    }
-
-    fun clearSchedule() {
-        _screenState.value = _screenState.value.copy(schedule = emptyList())
     }
 }

@@ -28,6 +28,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.collegeclientandroid.view.HomeScreen
+import com.example.collegeclientandroid.view.ProfileScreen
+import com.example.collegeclientandroid.viewmodel.MainViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -42,23 +50,39 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.statusBarsPadding().fillMaxSize()) {
                     it
                     val navController = rememberNavController()
+                    val mainViewModel: MainViewModel = hiltViewModel()
+                    var startDestination by remember { mutableStateOf("login") }
+                    
+                    LaunchedEffect(Unit) {
+                        startDestination = if (mainViewModel.isUserLoggedIn()) "home" else "login"
+                    }
+                    
                     NavHost(
                         navController = navController,
-                        startDestination = "login"
+                        startDestination = startDestination
                     ) {
                         composable("login") {
                             LoginScreen(
                                 onRegisterClick = { navController.navigate("registration") },
-                                onLoginClick = {navController.navigate("home")}
+                                onLoginSuccess = { navController.navigate("home") }
                             )
                         }
                         composable("registration") {
                             RegistrationScreen(
-                                onLoginClick = { navController.popBackStack(); navController.navigate("login") }
+                                onLoginClick = { navController.popBackStack(); navController.navigate("login") },
+                                onRegistrationSuccess = { navController.navigate("home") }
                             )
                         }
                         composable("home") {
-                            HomeScreen()
+                            HomeScreen(
+                                onProfileClick = {navController.navigate("profile")}
+                            )
+                        }
+                        composable("profile") {
+                            ProfileScreen(
+                                onBackClick = { navController.navigate("home") },
+                                onLogoutClick = { navController.navigate("login") }
+                            )
                         }
                     }
                 }
