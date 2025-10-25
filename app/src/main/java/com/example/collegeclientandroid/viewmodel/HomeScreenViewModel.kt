@@ -2,6 +2,7 @@ package com.example.collegeclientandroid.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.collegeclientandroid.AuthManager
 import com.example.collegeclientandroid.network.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,18 +17,20 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeScreenViewModel @Inject constructor(
-    private val apiService: ApiService
-): ViewModel() {
+    private val apiService: ApiService,
+    private val authManager: AuthManager
+) : ViewModel() {
 
-    private val _screenState: MutableStateFlow<HomeScreenState> = MutableStateFlow(HomeScreenState())
+    private val _screenState: MutableStateFlow<HomeScreenState> =
+        MutableStateFlow(HomeScreenState().copy(groupName = authManager.getGroupName()))
     val screenState: StateFlow<HomeScreenState> = _screenState.asStateFlow()
 
     private val dateFormatter = SimpleDateFormat("dd.MM.yyyy", Locale("ru"))
-    
+
     private fun getDayOfWeek(dateMillis: Long): String {
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = dateMillis
-        
+
         return when (calendar.get(Calendar.DAY_OF_WEEK)) {
             Calendar.MONDAY -> "Понедельник"
             Calendar.TUESDAY -> "Вторник"
@@ -75,11 +78,11 @@ class HomeScreenViewModel @Inject constructor(
             setError("Введите номер группы")
             return
         }
-        
+
         _screenState.value = _screenState.value.copy(isLoading = true, errorMessage = null)
-        
+
         val dayOfWeek = getDayOfWeek(dateMillis)
-        
+
         viewModelScope.launch {
             try {
                 val schedule = apiService.getSchedule(groupName, dayOfWeek)

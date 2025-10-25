@@ -1,5 +1,6 @@
 package com.example.collegeclientandroid.viewmodel
 
+import com.example.collegeclientandroid.AuthManager
 
 data class HomeScreenState(
     val groupName: String = "",

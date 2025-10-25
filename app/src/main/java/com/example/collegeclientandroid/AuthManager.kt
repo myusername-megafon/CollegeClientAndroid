@@ -1,6 +1,9 @@
 package com.example.collegeclientandroid
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
 import android.util.Log
 import androidx.core.content.edit
 import com.example.collegeclientandroid.network.LoginRequest
@@ -10,6 +13,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
 
@@ -21,6 +25,10 @@ class AuthManager @Inject constructor(
 
     fun isLoggedIn(): Boolean {
         return prefs.getInt("id", -1) != -1
+    }
+
+    fun getGroupName(): String {
+        return prefs.getString("group", null) ?: ""
     }
 
     suspend fun logIn(email: String, password: String): Boolean {
@@ -47,7 +55,7 @@ class AuthManager @Inject constructor(
         }
     }
 
-    fun getAuthorId(): Int {
+    fun getUserId(): Int {
         return prefs.getInt("id", -1)
     }
 
@@ -71,6 +79,7 @@ class AuthManager @Inject constructor(
             remove("email")
             remove("photo")
             remove("group")
+            remove("user_photo_base64")
         }
     }
 
@@ -100,7 +109,7 @@ class AuthManager @Inject constructor(
 
     suspend fun uploadUserPhoto(photoFile: File): Boolean {
         return try {
-            val userId = getAuthorId()
+            val userId = getUserId()
             if (userId == -1) {
                 Log.e("AuthManager", "Пользователь не авторизован")
                 return false
@@ -112,6 +121,8 @@ class AuthManager @Inject constructor(
             val response = apiService.uploadUserPhoto(userId, photoPart)
             if (response.isSuccessful) {
                 Log.d("AuthManager", "Фото успешно загружено")
+                val photoBytes = photoFile.readBytes()
+                saveUserPhotoToPrefs(photoBytes)
                 true
             } else {
                 Log.e("AuthManager", "Ошибка загрузки фото: ${response.code()} - ${response.message()}")
@@ -125,7 +136,7 @@ class AuthManager @Inject constructor(
 
     suspend fun getUserPhoto(): ByteArray? {
         return try {
-            val userId = getAuthorId()
+            val userId = getUserId()
             if (userId == -1) {
                 Log.e("AuthManager", "Пользователь не авторизован")
                 return null
@@ -133,15 +144,53 @@ class AuthManager @Inject constructor(
 
             val response = apiService.getUserPhoto(userId)
             if (response.isSuccessful && response.body() != null) {
-                response.body()!!.bytes()
+                val photoBytes = response.body()!!.bytes()
+                saveUserPhotoToPrefs(photoBytes)
+                photoBytes
             } else {
                 Log.e("AuthManager", "Ошибка получения фото: ${response.code()} - ${response.message()}")
-                null
+                getUserPhotoFromPrefs()
             }
         } catch (e: Exception) {
             Log.e("AuthManager", "Исключение при получении фото", e)
+            getUserPhotoFromPrefs()
+        }
+    }
+    
+    private fun saveUserPhotoToPrefs(photoBytes: ByteArray) {
+        try {
+            val base64Photo = Base64.encodeToString(photoBytes, Base64.DEFAULT)
+            prefs.edit {
+                putString("user_photo_base64", base64Photo)
+            }
+            Log.d("AuthManager", "Фото сохранено в преференсы")
+        } catch (e: Exception) {
+            Log.e("AuthManager", "Ошибка сохранения фото в преференсы", e)
+        }
+    }
+    
+    fun getUserPhotoFromPrefs(): ByteArray? {
+        return try {
+            val base64Photo = prefs.getString("user_photo_base64", null)
+            if (base64Photo != null) {
+                val photoBytes = Base64.decode(base64Photo, Base64.DEFAULT)
+                Log.d("AuthManager", "Фото загружено из преференсов")
+                photoBytes
+            } else {
+                Log.d("AuthManager", "Фото не найдено в преференсах")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("AuthManager", "Ошибка загрузки фото из преференсов", e)
             null
         }
+    }
+    
+    fun clearUserPhotoFromPrefs() {
+        prefs.edit {
+            remove("user_photo_base64")
+        }
+        Log.d("AuthManager", "Фото удалено из преференсов")
     }
 }
 

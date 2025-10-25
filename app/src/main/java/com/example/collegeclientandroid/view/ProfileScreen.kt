@@ -50,6 +50,8 @@ fun ProfileScreen(
     val userInfo = viewModel.getUserInfo()
     val userPhoto by viewModel.userPhoto.collectAsState()
     val isLoadingPhoto by viewModel.isLoadingPhoto.collectAsState()
+    val photoError by viewModel.photoError.collectAsState()
+    val photoSource by viewModel.photoSource.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadUserPhoto()
@@ -155,26 +157,42 @@ fun ProfileScreen(
             if (isLoadingPhoto) {
                 Text("Загрузка фото...")
             } else if (userPhoto != null) {
-                Image(
-                    bitmap = userPhoto!!.asImageBitmap(),
-                    contentDescription = "Фото пользователя",
-                    modifier = Modifier
-                        .size(150.dp),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(150.dp)
-                        .clip(CircleShape)
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Фото не загружено",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
+                    Image(
+                        bitmap = userPhoto!!.asImageBitmap(),
+                        contentDescription = "Фото пользователя",
+                        modifier = Modifier
+                            .size(150.dp),
+                        contentScale = ContentScale.Crop
                     )
+                }
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(150.dp)
+                            .clip(CircleShape)
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Фото не загружено",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                    }
+                    if (photoError != null) {
+                        Text(
+                            text = photoError!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Red,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 }
             }
         }

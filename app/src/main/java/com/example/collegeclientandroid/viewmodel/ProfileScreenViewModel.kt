@@ -26,6 +26,10 @@ class ProfileScreenViewModel @Inject constructor(
     val isLoadingPhoto: StateFlow<Boolean> = _isLoadingPhoto.asStateFlow()
     
     private val _photoError = MutableStateFlow<String?>(null)
+    val photoError: StateFlow<String?> = _photoError.asStateFlow()
+    
+    private val _photoSource = MutableStateFlow<String?>(null)
+    val photoSource: StateFlow<String?> = _photoSource.asStateFlow()
     
     fun getUserInfo(): UserInfo? {
         return authManager.getUserInfo()
@@ -39,17 +43,28 @@ class ProfileScreenViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoadingPhoto.value = true
             _photoError.value = null
+            _photoSource.value = null
             
             try {
                 val photoBytes = authManager.getUserPhoto()
                 if (photoBytes != null) {
                     val bitmap = BitmapFactory.decodeByteArray(photoBytes, 0, photoBytes.size)
                     _userPhoto.value = bitmap
+                    _photoSource.value = "Сервер"
                 } else {
-                    _photoError.value = "Фото не найдено"
+                    val fallbackPhotoBytes = authManager.getUserPhotoFromPrefs()
+                    if (fallbackPhotoBytes != null) {
+                        val bitmap = BitmapFactory.decodeByteArray(fallbackPhotoBytes, 0, fallbackPhotoBytes.size)
+                        _userPhoto.value = bitmap
+                        _photoSource.value = "Кэш"
+                    } else {
+                        _photoError.value = "Фото не найдено"
+                        _photoSource.value = null
+                    }
                 }
             } catch (e: Exception) {
                 _photoError.value = "Ошибка загрузки фото: ${e.message}"
+                _photoSource.value = null
             } finally {
                 _isLoadingPhoto.value = false
             }
@@ -60,6 +75,7 @@ class ProfileScreenViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoadingPhoto.value = true
             _photoError.value = null
+            _photoSource.value = null
             
             try {
                 val success = authManager.uploadUserPhoto(photoFile)
