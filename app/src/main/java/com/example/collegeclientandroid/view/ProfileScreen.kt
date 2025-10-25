@@ -1,6 +1,9 @@
 package com.example.collegeclientandroid.view
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,9 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -26,17 +30,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.collegeclientandroid.utils.rememberImagePicker
 import com.example.collegeclientandroid.viewmodel.ProfileScreenViewModel
@@ -50,8 +63,7 @@ fun ProfileScreen(
     val userInfo = viewModel.getUserInfo()
     val userPhoto by viewModel.userPhoto.collectAsState()
     val isLoadingPhoto by viewModel.isLoadingPhoto.collectAsState()
-    val photoError by viewModel.photoError.collectAsState()
-    val photoSource by viewModel.photoSource.collectAsState()
+    var showFullScreenImage by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadUserPhoto()
@@ -60,6 +72,7 @@ fun ProfileScreen(
     val pickImage = rememberImagePicker { file ->
         viewModel.uploadUserPhoto(file)
     }
+
     Column(
         modifier = Modifier
             .padding(8.dp)
@@ -86,8 +99,7 @@ fun ProfileScreen(
                     disabledContentColor = Color.Black,
                     disabledContainerColor = Color.White
                 )
-            )
-            {
+            ) {
                 Icon(Icons.Default.Home, contentDescription = null)
                 Spacer(modifier = Modifier.size(8.dp))
                 Text(text = "Назад", color = Color.White)
@@ -106,7 +118,8 @@ fun ProfileScreen(
             readOnly = true,
             value = userInfo?.fio ?: "",
             textStyle = MaterialTheme.typography.bodyMedium,
-            onValueChange = {})
+            onValueChange = {}
+        )
 
         Text(
             text = "Группа",
@@ -120,7 +133,8 @@ fun ProfileScreen(
             readOnly = true,
             value = userInfo?.group ?: "",
             textStyle = MaterialTheme.typography.bodyMedium,
-            onValueChange = {})
+            onValueChange = {}
+        )
 
         Text(
             text = "Почта",
@@ -134,7 +148,8 @@ fun ProfileScreen(
             readOnly = true,
             value = userInfo?.email ?: "",
             textStyle = MaterialTheme.typography.bodyMedium,
-            onValueChange = {})
+            onValueChange = {}
+        )
 
         Text(
             modifier = Modifier.fillMaxWidth(),
@@ -157,16 +172,27 @@ fun ProfileScreen(
             if (isLoadingPhoto) {
                 Text("Загрузка фото...")
             } else if (userPhoto != null) {
+                val isLandscape = remember(userPhoto) {
+                    userPhoto!!.width > userPhoto!!.height
+                }
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Image(
-                        bitmap = userPhoto!!.asImageBitmap(),
-                        contentDescription = "Фото пользователя",
+                    Box(
                         modifier = Modifier
-                            .size(150.dp),
-                        contentScale = ContentScale.Crop
-                    )
+                            .fillMaxWidth()
+                            .height(if (isLandscape) 120.dp else 180.dp)
+                    ) {
+                        Image(
+                            bitmap = userPhoto!!.asImageBitmap(),
+                            contentDescription = "Фото пользователя",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable { showFullScreenImage = true },
+                            contentScale = ContentScale.Fit
+                        )
+                    }
                 }
             } else {
                 Column(
@@ -185,16 +211,15 @@ fun ProfileScreen(
                             color = Color.Gray
                         )
                     }
-                    if (photoError != null) {
-                        Text(
-                            text = photoError!!,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Red,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
                 }
             }
+        }
+
+        if (showFullScreenImage && userPhoto != null) {
+            ZoomableFullScreenImage(
+                imageBitmap = userPhoto!!.asImageBitmap(),
+                onDismiss = { showFullScreenImage = false }
+            )
         }
 
         Spacer(modifier = Modifier.size(16.dp))
@@ -210,14 +235,17 @@ fun ProfileScreen(
             ),
             enabled = !isLoadingPhoto
         ) {
-            Text(text = if (isLoadingPhoto) "Загрузка..." else "Загрузить фото",color = Color.White)
+            Text(
+                text = if (isLoadingPhoto) "Загрузка..." else "Загрузить фото",
+                color = Color.White
+            )
         }
-        
+
         Spacer(modifier = Modifier.size(16.dp))
-        
+
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { 
+            onClick = {
                 viewModel.logout()
                 onLogoutClick()
             },
@@ -226,7 +254,109 @@ fun ProfileScreen(
                 contentColor = Color.White
             )
         ) {
-            Text(text = "Выйти из системы",color = Color.White)
+            Text(text = "Выйти из системы", color = Color.White)
         }
     }
+}
+
+@Composable
+fun ZoomableFullScreenImage(
+    imageBitmap: ImageBitmap,
+    onDismiss: () -> Unit
+) {
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    var rotation by remember { mutableStateOf(0f) }
+
+    val isLandscape = remember(imageBitmap) {
+        imageBitmap.width > imageBitmap.height
+    }
+
+    LaunchedEffect(imageBitmap) {
+        if (isLandscape) {
+            rotation = 90f
+        }
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTransformGestures { centroid, pan, zoom, rotate ->
+                            scale = maxOf(0.5f, minOf(scale * zoom, 5f))
+
+                            offset += pan
+
+                            rotation += rotate
+                        }
+                    }
+            ) {
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = "Фото пользователя (полный экран)",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            translationX = offset.x
+                            translationY = offset.y
+                            rotationZ = rotation
+                        },
+                    contentScale = if (isLandscape) ContentScale.Inside else ContentScale.Fit
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Закрыть",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { onDismiss() }
+                        .padding(bottom = 12.dp),
+                    tint = Color.White
+                )
+
+                if (scale > 1.1f || rotation != 0f) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Сбросить",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clickable {
+                                scale = 1f
+                                offset = androidx.compose.ui.geometry.Offset.Zero
+                                rotation = if (isLandscape) 90f else 0f
+                            }
+                            .padding(bottom = 12.dp),
+                        tint = Color.White
+                    )
+                }
+
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun ProfileScreenPreview() {
+    ProfileScreen(
+        onBackClick = {},
+        onLogoutClick = {}
+    )
 }
