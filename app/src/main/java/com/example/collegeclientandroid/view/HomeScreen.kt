@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -55,11 +56,13 @@ import com.example.collegeclientandroid.viewmodel.LoginScreenViewModel
 @Composable
 fun HomeScreen(
     viewModel: HomeScreenViewModel = hiltViewModel(),
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onBypassSheetClick: () -> Unit
 ) {
 
     val uiState by viewModel.screenState.collectAsState()
     val datePickerState = rememberDatePickerState()
+    LaunchedEffect(Unit) { viewModel.loadWeekInfo() }
 
     CollegeClientAndroidTheme {
         Column(
@@ -91,7 +94,27 @@ fun HomeScreen(
                     Text(text = "Профиль", color = Color.White)
                 }
             }
+            Spacer(modifier = Modifier.size(8.dp))
+            Button(
+                onClick = onBypassSheetClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.DarkGray,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Обходной лист")
+            }
             Spacer(modifier = Modifier.size(16.dp))
+
+            if (uiState.weekInfo.isNotBlank()) {
+                Text(
+                    text = uiState.weekInfo,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.size(12.dp))
+            }
 
             Text(
                 text = "Группа",
@@ -172,6 +195,22 @@ fun HomeScreen(
                 ) {
                     items(uiState.schedule) { lesson ->
                         LessonCard(lesson = lesson)
+                    }
+                }
+            }
+
+            if (uiState.replacements.isNotEmpty()) {
+                Spacer(modifier = Modifier.size(16.dp))
+                Text(
+                    text = "Замены",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(uiState.replacements) { replacement ->
+                        LessonCard(lesson = replacement)
                     }
                 }
             }

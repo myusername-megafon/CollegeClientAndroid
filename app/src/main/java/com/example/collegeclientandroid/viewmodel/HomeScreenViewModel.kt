@@ -38,8 +38,8 @@ class HomeScreenViewModel @Inject constructor(
             Calendar.THURSDAY -> "Четверг"
             Calendar.FRIDAY -> "Пятница"
             Calendar.SATURDAY -> "Суббота"
-            Calendar.SUNDAY -> "воскресенье"
-            else -> "неизвестно"
+            Calendar.SUNDAY -> "Воскресенье"
+            else -> "Неизвестно"
         }
     }
 
@@ -86,18 +86,31 @@ class HomeScreenViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val schedule = apiService.getSchedule(groupName, dayOfWeek)
+                val replacements = apiService.getReplacements(groupName, dayOfWeek)
+                    .filterNot { it.contains("не найдено", ignoreCase = true) }
                 _screenState.value = _screenState.value.copy(
                     isLoading = false,
                     schedule = schedule,
+                    replacements = replacements,
                     errorMessage = null
                 )
             } catch (e: Exception) {
                 _screenState.value = _screenState.value.copy(
                     isLoading = false,
                     schedule = emptyList(),
+                    replacements = emptyList(),
                     errorMessage = "Ошибка загрузки расписания: ${e.message}"
                 )
             }
+        }
+    }
+
+    fun loadWeekInfo() {
+        viewModelScope.launch {
+            runCatching { apiService.getWeekInfo() }
+                .onSuccess { info ->
+                    _screenState.value = _screenState.value.copy(weekInfo = info)
+                }
         }
     }
 }

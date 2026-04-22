@@ -14,6 +14,12 @@ interface ApiService {
     @GET("api/Schedule/schedule/{group}/{day}")
     suspend fun getSchedule(@Path("group") group: String, @Path("day") day: String): List<String>
 
+    @GET("api/Schedule/replacements/{group}/{day}")
+    suspend fun getReplacements(@Path("group") group: String, @Path("day") day: String): List<String>
+
+    @GET("api/Schedule/week-info")
+    suspend fun getWeekInfo(): String
+
     @POST("api/Users/login")
     suspend fun login(@Body loginRequest: LoginRequest): Response<LoginResponse>
 

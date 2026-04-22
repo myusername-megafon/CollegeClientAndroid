@@ -1,8 +1,12 @@
 package com.example.collegeclientandroid
 
 import android.app.Activity
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +40,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
+import android.os.Build
+import com.example.collegeclientandroid.view.BypassSheetScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -47,6 +54,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CollegeClientAndroidTheme {
                 SetSystemBarsColor()
+                RequestNotificationPermission()
                 Scaffold(modifier = Modifier.statusBarsPadding().fillMaxSize()) {
                     it
                     val navController = rememberNavController()
@@ -75,13 +83,19 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("home") {
                             HomeScreen(
-                                onProfileClick = {navController.navigate("profile")}
+                                onProfileClick = {navController.navigate("profile")},
+                                onBypassSheetClick = { navController.navigate("bypass") }
                             )
                         }
                         composable("profile") {
                             ProfileScreen(
                                 onBackClick = { navController.navigate("home") },
                                 onLogoutClick = { navController.navigate("login") }
+                            )
+                        }
+                        composable("bypass") {
+                            BypassSheetScreen(
+                                onBackClick = { navController.popBackStack() }
                             )
                         }
                     }
@@ -101,6 +115,26 @@ class MainActivity : ComponentActivity() {
             window.statusBarColor = Color.Transparent.toArgb()
 
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !useDarkIcons
+        }
+    }
+
+    @Composable
+    private fun RequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+        val launcher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = {}
+        )
+
+        LaunchedEffect(Unit) {
+            if (ContextCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
     }
 }
