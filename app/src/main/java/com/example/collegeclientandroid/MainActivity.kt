@@ -43,11 +43,17 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import android.os.Build
 import com.example.collegeclientandroid.view.BypassSheetScreen
+import com.example.collegeclientandroid.push.PushTokenManager
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var pushTokenManager: PushTokenManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        runCatching { pushTokenManager.registerCurrentDeviceToken() }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 

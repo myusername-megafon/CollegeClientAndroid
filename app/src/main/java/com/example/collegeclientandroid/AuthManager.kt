@@ -8,11 +8,16 @@ import android.util.Log
 import androidx.core.content.edit
 import com.example.collegeclientandroid.network.LoginRequest
 import com.example.collegeclientandroid.network.NetworkModule
+import com.example.collegeclientandroid.network.RegisterPushTokenRequest
 import com.example.collegeclientandroid.network.RegisterRequest
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
@@ -43,6 +48,7 @@ class AuthManager @Inject constructor(
                     putString("photo", loginResponse.photo)
                     putString("group", loginResponse.group)
                 }
+                tryRegisterPushToken(loginResponse.group)
                 Log.d("AuthManager", "Успешный вход для пользователя: ${loginResponse.fio}")
                 true
             } else {
@@ -191,6 +197,29 @@ class AuthManager @Inject constructor(
             remove("user_photo_base64")
         }
         Log.d("AuthManager", "Фото удалено из преференсов")
+    }
+
+    private fun tryRegisterPushToken(group: String?) {
+        try {
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { token ->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        runCatching {
+                            apiService.registerPushToken(
+                                RegisterPushTokenRequest(
+                                    token = token,
+                                    group = group
+                                )
+                            )
+                        }
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("AuthManager", "Не удалось получить FCM token", e)
+                }
+        } catch (e: Exception) {
+            Log.e("AuthManager", "FCM недоступен на устройстве", e)
+        }
     }
 }
 

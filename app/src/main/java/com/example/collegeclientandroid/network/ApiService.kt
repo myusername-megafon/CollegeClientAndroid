@@ -20,6 +20,9 @@ interface ApiService {
     @GET("api/Schedule/week-info")
     suspend fun getWeekInfo(): String
 
+    @POST("api/Push/register")
+    suspend fun registerPushToken(@Body request: RegisterPushTokenRequest): Response<Unit>
+
     @POST("api/Users/login")
     suspend fun login(@Body loginRequest: LoginRequest): Response<LoginResponse>
 
@@ -64,3 +67,8 @@ data class LoginResponse(
 data class LoginRequest(
     @SerializedName("email") val email: String,
     @SerializedName("password") val password: String)
+
+data class RegisterPushTokenRequest(
+    @SerializedName("token") val token: String,
+    @SerializedName("group") val group: String?
+)
