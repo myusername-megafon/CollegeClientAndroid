@@ -8,11 +8,17 @@ import android.util.Log
 import androidx.core.content.edit
 import com.example.collegeclientandroid.network.LoginRequest
 import com.example.collegeclientandroid.network.NetworkModule
+import com.example.collegeclientandroid.network.RegisterPushTokenRequest
 import com.example.collegeclientandroid.network.RegisterRequest
+import com.example.collegeclientandroid.network.VerifyEmailCodeRequest
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
@@ -43,6 +49,7 @@ class AuthManager @Inject constructor(
                     putString("photo", loginResponse.photo)
                     putString("group", loginResponse.group)
                 }
+                tryRegisterPushToken(loginResponse.group)
                 Log.d("AuthManager", "Успешный вход для пользователя: ${loginResponse.fio}")
                 true
             } else {
@@ -88,21 +95,53 @@ class AuthManager @Inject constructor(
         email: String,
         password: String,
         group: String
-    ): Boolean {
+    ): RegistrationCodeRequestResult {
         return try {
-            val response = NetworkModule.apiService.registration(
+            val response = NetworkModule.apiService.requestEmailCode(
                 RegisterRequest(fullName, email, password, "", group)
+            )
+            if (response.isSuccessful) {
+                Log.d("AuthManager", "Код подтверждения отправлен на email: $email")
+                RegistrationCodeRequestResult.Success
+            } else {
+                val serverMessage = response.errorBody()?.string()?.trim().orEmpty()
+                val message = when {
+                    response.code() == 403 && serverMessage.isBlank() -> "Регистрация временно отключена администратором"
+                    serverMessage.isNotBlank() -> serverMessage
+                    else -> "Ошибка отправки кода (${response.code()})"
+                }
+                Log.e("AuthManager", "Ошибка отправки кода: ${response.code()} - $message")
+                RegistrationCodeRequestResult.Failure(message)
+            }
+        } catch (e: Exception) {
+            Log.e("AuthManager", "Исключение при отправке кода", e)
+            RegistrationCodeRequestResult.Failure("Не удалось связаться с сервером. Проверьте интернет и адрес сервера")
+        }
+    }
+
+    suspend fun verifyEmailCode(email: String, code: String): Boolean {
+        return try {
+            val response = NetworkModule.apiService.verifyEmailCode(
+                VerifyEmailCodeRequest(email = email, code = code)
             )
             if (response.isSuccessful && response.body() != null) {
                 val registerResponse = response.body()!!
-                Log.d("AuthManager", "Успешная регистрация для пользователя: ${registerResponse.fio}")
+                prefs.edit {
+                    putInt("id", registerResponse.id)
+                    putString("fio", registerResponse.fio)
+                    putString("email", registerResponse.email)
+                    putString("photo", registerResponse.photoFiletype ?: "")
+                    putString("group", registerResponse.group ?: "")
+                }
+                tryRegisterPushToken(registerResponse.group)
+                Log.d("AuthManager", "Почта подтверждена и сессия создана: $email")
                 true
             } else {
-                Log.e("AuthManager", "Ошибка регистрации: ${response.code()} - ${response.message()}")
+                Log.e("AuthManager", "Ошибка подтверждения кода: ${response.code()} - ${response.message()}")
                 false
             }
         } catch (e: Exception) {
-            Log.e("AuthManager", "Исключение при регистрации", e)
+            Log.e("AuthManager", "Исключение при подтверждении кода", e)
             false
         }
     }
@@ -192,6 +231,29 @@ class AuthManager @Inject constructor(
         }
         Log.d("AuthManager", "Фото удалено из преференсов")
     }
+
+    private fun tryRegisterPushToken(group: String?) {
+        try {
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { token ->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        runCatching {
+                            apiService.registerPushToken(
+                                RegisterPushTokenRequest(
+                                    token = token,
+                                    group = group
+                                )
+                            )
+                        }
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("AuthManager", "Не удалось получить FCM token", e)
+                }
+        } catch (e: Exception) {
+            Log.e("AuthManager", "FCM недоступен на устройстве", e)
+        }
+    }
 }
 
 data class UserInfo(
@@ -201,3 +263,8 @@ data class UserInfo(
     val photo: String,
     val group: String
 )
+
+sealed interface RegistrationCodeRequestResult {
+    data object Success : RegistrationCodeRequestResult
+    data class Failure(val message: String) : RegistrationCodeRequestResult
+}

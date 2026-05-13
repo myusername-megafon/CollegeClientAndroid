@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.safe.args)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -77,6 +78,8 @@ dependencies {
     implementation(libs.hilt.nav.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coil.compose)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation("androidx.fragment:fragment-ktx:1.6.2")

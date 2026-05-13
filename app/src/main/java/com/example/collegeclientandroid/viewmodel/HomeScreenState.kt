@@ -9,5 +9,7 @@ data class HomeScreenState(
     val showDatePicker: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val schedule: List<String> = emptyList()
+    val schedule: List<String> = emptyList(),
+    val replacements: List<String> = emptyList(),
+    val weekInfo: String = ""
 )

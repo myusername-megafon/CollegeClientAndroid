@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -49,17 +50,21 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.collegeclientandroid.ui.theme.CollegeClientAndroidTheme
 import com.example.collegeclientandroid.viewmodel.HomeScreenViewModel
-import com.example.collegeclientandroid.viewmodel.LoginScreenViewModel
+import com.example.collegeclientandroid.help.InfoSystemHelpModule
+import com.example.collegeclientandroid.help.ScreenHelpAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeScreenViewModel = hiltViewModel(),
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onBypassSheetClick: () -> Unit,
+    onStudyPlanClick: (String) -> Unit
 ) {
 
     val uiState by viewModel.screenState.collectAsState()
     val datePickerState = rememberDatePickerState()
+    LaunchedEffect(Unit) { viewModel.loadWeekInfo() }
 
     CollegeClientAndroidTheme {
         Column(
@@ -69,13 +74,15 @@ fun HomeScreen(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Расписание",
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp)
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                ScreenHelpAction(module = InfoSystemHelpModule.HOME_SCHEDULE)
+                Spacer(modifier = Modifier.size(8.dp))
                 Button(
                     onClick = { onProfileClick() },
                     colors = ButtonDefaults.buttonColors(
@@ -91,7 +98,44 @@ fun HomeScreen(
                     Text(text = "Профиль", color = Color.White)
                 }
             }
+            Spacer(modifier = Modifier.size(8.dp))
+            Button(
+                onClick = onBypassSheetClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.DarkGray,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Обходной лист")
+            }
+            Spacer(modifier = Modifier.size(8.dp))
+            Button(
+                onClick = {
+                    if (uiState.groupName.isBlank()) {
+                        viewModel.setError("Сначала укажите группу")
+                    } else {
+                        onStudyPlanClick(uiState.groupName.trim())
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF263238),
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Учебный план группы")
+            }
             Spacer(modifier = Modifier.size(16.dp))
+
+            if (uiState.weekInfo.isNotBlank()) {
+                Text(
+                    text = uiState.weekInfo,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.size(12.dp))
+            }
 
             Text(
                 text = "Группа",
@@ -175,6 +219,23 @@ fun HomeScreen(
                     }
                 }
             }
+
+            if (uiState.replacements.isNotEmpty()) {
+                Spacer(modifier = Modifier.size(16.dp))
+                Text(
+                    text = "Замены",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(uiState.replacements) { replacement ->
+                        LessonCard(lesson = replacement)
+                    }
+                }
+            }
+
         }
 
         if (uiState.showDatePicker) {

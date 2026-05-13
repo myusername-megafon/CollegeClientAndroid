@@ -22,6 +22,8 @@ room = "2.7.2"
 retrofit = "2.9.0"
 coilCompose = "2.5.0"
 kotlinxSerializationJson = "1.7.3"
+firebaseBom = "33.7.0"
+googleServices = "4.4.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -58,6 +60,8 @@ retrofit-converter = {module = "com.squareup.retrofit2:converter-gson",version.r
 
 hilt-nav-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNav"}
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -65,3 +69,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 safe-args = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigation" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
