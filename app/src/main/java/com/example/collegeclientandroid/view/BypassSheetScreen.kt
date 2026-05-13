@@ -32,6 +32,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import com.example.collegeclientandroid.viewmodel.BypassSheetViewModel
+import com.example.collegeclientandroid.help.InfoSystemHelpModule
+import com.example.collegeclientandroid.help.ScreenHelpAction
 
 @Composable
 fun BypassSheetScreen(
@@ -39,6 +41,7 @@ fun BypassSheetScreen(
     viewModel: BypassSheetViewModel = hiltViewModel()
 ) {
     val tasks by viewModel.tasks.collectAsState()
+    val error by viewModel.error.collectAsState()
     var newTask by remember { mutableStateOf("") }
 
     Column(
@@ -48,13 +51,15 @@ fun BypassSheetScreen(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Обходной лист",
                 style = MaterialTheme.typography.titleLarge
             )
+            Spacer(modifier = Modifier.weight(1f))
+            ScreenHelpAction(module = InfoSystemHelpModule.BYPASS_SHEET)
+            Spacer(modifier = Modifier.size(8.dp))
             Button(
                 onClick = onBackClick,
                 colors = ButtonDefaults.buttonColors(
@@ -68,6 +73,10 @@ fun BypassSheetScreen(
 
         Spacer(modifier = Modifier.size(12.dp))
         Text("Данные сохраняются только на вашем устройстве.")
+        error?.let {
+            Spacer(modifier = Modifier.size(8.dp))
+            Text(text = it, color = Color.Red)
+        }
         Spacer(modifier = Modifier.size(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -90,7 +99,7 @@ fun BypassSheetScreen(
         Spacer(modifier = Modifier.size(12.dp))
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(tasks) { task ->
+            items(tasks, key = { it.id }) { task ->
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

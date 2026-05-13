@@ -3,6 +3,7 @@ package com.example.collegeclientandroid.view
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.collegeclientandroid.ui.theme.CollegeClientAndroidTheme
 import com.example.collegeclientandroid.viewmodel.LoginScreenViewModel
+import com.example.collegeclientandroid.help.InfoSystemHelpModule
+import com.example.collegeclientandroid.help.ScreenHelpAction
 
 @Composable
 fun LoginScreen(
@@ -44,10 +47,17 @@ fun LoginScreen(
     }
     
     CollegeClientAndroidTheme {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            ScreenHelpAction(
+                module = InfoSystemHelpModule.LOGIN,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 12.dp, end = 12.dp)
+            )
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             Spacer(modifier = Modifier.size(72.dp))
 
             Text(text = "Вход", style = MaterialTheme.typography.titleLarge)
@@ -127,6 +137,7 @@ fun LoginScreen(
                         modifier = Modifier.clickable { onRegisterClick() }
                     )
                 }
+            }
             }
         }
     }

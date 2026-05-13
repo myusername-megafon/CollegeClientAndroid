@@ -53,6 +53,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.collegeclientandroid.utils.rememberImagePicker
 import com.example.collegeclientandroid.viewmodel.ProfileScreenViewModel
+import com.example.collegeclientandroid.help.InfoSystemHelpModule
+import com.example.collegeclientandroid.help.ScreenHelpAction
 
 @Composable
 fun ProfileScreen(
@@ -80,8 +82,7 @@ fun ProfileScreen(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Профиль",
@@ -90,7 +91,9 @@ fun ProfileScreen(
                     fontWeight = FontWeight.Bold
                 )
             )
-
+            Spacer(modifier = Modifier.weight(1f))
+            ScreenHelpAction(module = InfoSystemHelpModule.PROFILE)
+            Spacer(modifier = Modifier.size(8.dp))
             Button(
                 onClick = { onBackClick() },
                 colors = ButtonDefaults.buttonColors(

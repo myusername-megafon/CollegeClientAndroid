@@ -8,6 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -42,14 +44,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import android.os.Build
+import android.net.Uri
 import com.example.collegeclientandroid.view.BypassSheetScreen
+import com.example.collegeclientandroid.view.MaintenanceBlocker
+import com.example.collegeclientandroid.view.StudyPlanScreen
 import com.example.collegeclientandroid.push.PushTokenManager
+import com.example.collegeclientandroid.viewmodel.ClientAppUiState
+import com.example.collegeclientandroid.viewmodel.ClientConfigViewModel
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var pushTokenManager: PushTokenManager
+
+    private val clientConfigViewModel: ClientConfigViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,50 +70,75 @@ class MainActivity : ComponentActivity() {
             CollegeClientAndroidTheme {
                 SetSystemBarsColor()
                 RequestNotificationPermission()
-                Scaffold(modifier = Modifier.statusBarsPadding().fillMaxSize()) {
-                    it
-                    val navController = rememberNavController()
-                    val mainViewModel: MainViewModel = hiltViewModel()
-                    var startDestination by remember { mutableStateOf("login") }
-                    
-                    LaunchedEffect(Unit) {
-                        startDestination = if (mainViewModel.isUserLoggedIn()) "home" else "login"
+
+                var clientUi by remember { mutableStateOf(ClientAppUiState()) }
+                LaunchedEffect(clientConfigViewModel) {
+                    clientConfigViewModel.uiState.collect { clientUi = it }
+                }
+
+                Box(Modifier.fillMaxSize()) {
+                    Scaffold(modifier = Modifier.statusBarsPadding().fillMaxSize()) {
+                        val navController = rememberNavController()
+                        val mainViewModel: MainViewModel = hiltViewModel()
+                        // Стартовый маршрут задаём синхронно: смена startDestination после первого кадра
+                        // ломает граф NavHost и часто приводит к падению при запуске.
+                        val startDestination = remember(mainViewModel) {
+                            if (mainViewModel.isUserLoggedIn()) "home" else "login"
+                        }
+
+                        NavHost(
+                            navController = navController,
+                            startDestination = startDestination
+                        ) {
+                            composable("login") {
+                                LoginScreen(
+                                    onRegisterClick = { navController.navigate("registration") },
+                                    onLoginSuccess = { navController.navigate("home") }
+                                )
+                            }
+                            composable("registration") {
+                                RegistrationScreen(
+                                    onLoginClick = {
+                                        navController.popBackStack()
+                                        navController.navigate("login")
+                                    },
+                                    onRegistrationSuccess = { navController.navigate("home") }
+                                )
+                            }
+                            composable("home") {
+                                HomeScreen(
+                                    onProfileClick = { navController.navigate("profile") },
+                                    onBypassSheetClick = { navController.navigate("bypass") },
+                                    onStudyPlanClick = { group ->
+                                        navController.navigate("studyPlan/${Uri.encode(group)}")
+                                    }
+                                )
+                            }
+                            composable("profile") {
+                                ProfileScreen(
+                                    onBackClick = { navController.navigate("home") },
+                                    onLogoutClick = { navController.navigate("login") }
+                                )
+                            }
+                            composable("bypass") {
+                                BypassSheetScreen(
+                                    onBackClick = { navController.popBackStack() }
+                                )
+                            }
+                            composable("studyPlan/{group}") { backStackEntry ->
+                                val group = Uri.decode(backStackEntry.arguments?.getString("group").orEmpty())
+                                StudyPlanScreen(
+                                    group = group,
+                                    onBackClick = { navController.popBackStack() }
+                                )
+                            }
+                        }
                     }
-                    
-                    NavHost(
-                        navController = navController,
-                        startDestination = startDestination
-                    ) {
-                        composable("login") {
-                            LoginScreen(
-                                onRegisterClick = { navController.navigate("registration") },
-                                onLoginSuccess = { navController.navigate("home") }
-                            )
-                        }
-                        composable("registration") {
-                            RegistrationScreen(
-                                onLoginClick = { navController.popBackStack(); navController.navigate("login") },
-                                onRegistrationSuccess = { navController.navigate("home") }
-                            )
-                        }
-                        composable("home") {
-                            HomeScreen(
-                                onProfileClick = {navController.navigate("profile")},
-                                onBypassSheetClick = { navController.navigate("bypass") }
-                            )
-                        }
-                        composable("profile") {
-                            ProfileScreen(
-                                onBackClick = { navController.navigate("home") },
-                                onLogoutClick = { navController.navigate("login") }
-                            )
-                        }
-                        composable("bypass") {
-                            BypassSheetScreen(
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                    }
+
+                    MaintenanceBlocker(
+                        maintenanceEnabled = clientUi.maintenanceEnabled,
+                        message = clientUi.maintenanceMessage
+                    )
                 }
             }
         }

@@ -11,6 +11,9 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 
 interface ApiService {
+    @GET("api/client-app/config")
+    suspend fun getClientAppConfig(): Response<ClientAppConfigResponse>
+
     @GET("api/Schedule/schedule/{group}/{day}")
     suspend fun getSchedule(@Path("group") group: String, @Path("day") day: String): List<String>
 
@@ -20,6 +23,9 @@ interface ApiService {
     @GET("api/Schedule/week-info")
     suspend fun getWeekInfo(): String
 
+    @GET("api/Schedule/study-plan/{group}")
+    suspend fun getStudyPlan(@Path("group") group: String): List<String>
+
     @POST("api/Push/register")
     suspend fun registerPushToken(@Body request: RegisterPushTokenRequest): Response<Unit>
 
@@ -28,6 +34,12 @@ interface ApiService {
 
     @POST("api/Users")
     suspend fun registration(@Body registerRequest: RegisterRequest): Response<RegisterResponse>
+
+    @POST("api/Users/request-email-code")
+    suspend fun requestEmailCode(@Body request: RegisterRequest): Response<okhttp3.ResponseBody>
+
+    @POST("api/Users/verify-email-code")
+    suspend fun verifyEmailCode(@Body request: VerifyEmailCodeRequest): Response<RegisterResponse>
 
     @GET("api/Users/{id}/photo")
     suspend fun getUserPhoto(@Path("id") userId: Int): Response<okhttp3.ResponseBody>
@@ -40,12 +52,18 @@ interface ApiService {
     ): Response<okhttp3.ResponseBody>
 }
 
+data class ClientAppConfigResponse(
+    val registrationEnabled: Boolean = true,
+    val maintenanceEnabled: Boolean = false,
+    val maintenanceMessage: String? = null
+)
+
 data class RegisterResponse (
     val id: Int,
     val fio: String,
     val email: String,
-    val photoFiletype: String,
-    val group: String
+    val photoFiletype: String?,
+    val group: String?
 )
 
 data class RegisterRequest (
@@ -71,4 +89,9 @@ data class LoginRequest(
 data class RegisterPushTokenRequest(
     @SerializedName("token") val token: String,
     @SerializedName("group") val group: String?
+)
+
+data class VerifyEmailCodeRequest(
+    @SerializedName("email") val email: String,
+    @SerializedName("code") val code: String
 )
